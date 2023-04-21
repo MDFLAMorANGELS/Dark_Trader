@@ -1,71 +1,64 @@
 require 'nokogiri'
 require 'open-uri'
 
-# Méthode qui récupère l'e-mail d'une mairie à partir de son URL
+# Récupère l'e-mail d'une mairie à partir de son URL
 def get_townhall_email(townhall_url)
-  # Parsing de la page de la mairie avec Nokogiri
-  doc = Nokogiri::HTML(open(townhall_url))
-
-  # Recherche de l'e-mail de la mairie dans le contenu de la page
-  email = doc.xpath("//section[2]/div/table/tbody/tr[4]/td[2]").text.strip
-
-  # Retourne l'e-mail trouvé
+  page = Nokogiri::HTML(URI.open(townhall_url))
+  email = page.xpath('//section[2]/div/table/tbody/tr[4]/td[2]').text
   return email
 end
 
-# Méthode qui récupère les URLs de toutes les mairies du Val d'Oise
+# Récupère les URLs de chaque ville du Val d'Oise
 def get_townhall_urls
-  # URL de l'annuaire des mairies du Val d'Oise
-  url = "http://annuaire-des-mairies.com/val-d-oise.html"
-
-  # Parsing de la page de l'annuaire avec Nokogiri
-  doc = Nokogiri::HTML(open(url))
-
-  # Recherche des liens des mairies dans le contenu de la page
-  links = doc.xpath("//a[@class='lientxt']")
-
-  # Création d'un array pour stocker les URLs des mairies
-  urls = []
-
-  # Parcours des liens trouvés et récupération de l'URL de chaque mairie
-  links.each do |link|
-    # Récupération de l'URL de la mairie
-    townhall_url = "http://annuaire-des-mairies.com" + link['href'][1..-1]
-
-    # Ajout de l'URL à l'array
-    urls << townhall_url
-  end
-
-  # Retourne l'array d'URLs de mairies
+  page = Nokogiri::HTML(URI.open("https://www.annuaire-des-mairies.com/val-d-oise.html"))
+  urls = page.xpath('//a[@class="lientxt"]/@href')
+  urls = urls.map { |url| "https://www.annuaire-des-mairies.com" + url.text[1..-1] }
   return urls
 end
 
-# Méthode qui récupère les adresses e-mail de toutes les mairies du Val d'Oise
+# Crée un array de hash contenant les e-mails de chaque mairie du Val d'Oise
 def get_townhall_emails
-  # Récupération des URLs des mairies
   urls = get_townhall_urls
-
-  # Création d'un array pour stocker les adresses e-mail des mairies
   emails = []
-
-  # Parcours des URLs des mairies et récupération de l'adresse e-mail de chaque mairie
   urls.each do |url|
-    # Récupération de l'adresse e-mail de la mairie
+    name = Nokogiri::HTML(URI.open(url)).xpath('//section[1]/div/div/div/h1').text.gsub(" - ", "")
     email = get_townhall_email(url)
-
-    # Récupération du nom de la ville à partir de l'URL
-    town_name = url.split("/")[-1].split(".")[0].capitalize.gsub("-", " ")
-
-    # Création d'un hash pour stocker le nom de la ville et son adresse e-mail
-    town_hash = { town_name => email }
-
-    # Ajout du hash à l'array des adresses e-mail
-    emails << town_hash
+    emails << { name => email }
   end
-
-  # Retourne l'array des adresses e-mail des mairies
   return emails
 end
 
-# Affichage des adresses e-mail des mairies
+# Affiche le résultat
 puts get_townhall_emails
+
+
+# TRAVAILLE DE LILIAN
+
+# require 'nokogiri'
+# require 'open-uri'
+
+# def get_ville
+
+#   region_page = Nokogiri::HTML(URI.open("https://www.annuaire-des-mairies.com/val-d-oise.html"))
+
+#   return ville_name_array = region_page.xpath("//a[contains(@class, 'lientxt')]/text()").map {|x| x.to_s.downcase.gsub(" ", "-") }
+
+# end
+
+# def get_email (ville_names)
+
+#   ville_email_array = []
+
+#   # Boucle sur chaque ville du tableau pour obtenir l'e-mail
+#   for n in 0...ville_names.length
+
+#     ville_page = Nokogiri::HTML(URI.open("https://www.annuaire-des-mairies.com/95/#{ville_names[n]}.html"))
+
+#     ville_email_array << ville_page.xpath("//html/body/div/main/section[2]/div/table/tbody/tr[4]/td[2]/text()").to_s
+
+#   end
+
+#   return ville_email_array
+# end
+
+# puts email_ville_result = Hash[get_ville.zip(get_email(get_ville))]
